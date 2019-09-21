@@ -148,3 +148,9 @@ if __name__ == "__main__":
     print_timing(scheduler.schedule_with_grids_npforelem(simple_particles_positions))
     print("In-Cell scheduling - Numpy for-loop over via np.ndindex")
     print_timing(scheduler.schedule_with_grids_npndindex(simple_particles_positions))
+
+
+    print("Final run with 10^8 particles ...")
+    particles_positions = np.random.rand(100000000,2)
+    core_distribution = scheduler.schedule_in_sequence(particles_positions)
+    core_distribution = scheduler.schedule_with_grids(particles_positions)
