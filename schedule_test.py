@@ -19,7 +19,7 @@ class MyTestCase(unittest.TestCase):
                               [5.4,6.5],[6.3,7.6],[7.2,8.7],[8.1,9.8],[9.0,10.9]])
         scheduler = schedule.ParticleScheduler()
         scheduler.set_cores(5)
-        positions = [0,0,0,0,8,9,9,9,9,16]
+        positions = [0,0,0,0,8,9,9,9,9,17]
         self.assertEqual(particles.shape[0], len(positions))
         out_positions = scheduler.schedule_with_grids(particles)
         self.assertEqual(positions, out_positions)
