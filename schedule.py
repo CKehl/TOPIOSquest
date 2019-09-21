@@ -1,5 +1,16 @@
 import numpy as np
 import itertools
+import time
+
+def print_timing (func):
+  def wrapper (*arg):
+    t1 = time.time ()
+    res = func (*arg)
+    t2 = time.time ()
+    print ("{0} took {1:.4f} ms".format (func.__name__, (t2 - t1) * 1000.0))
+    return res
+
+  return wrapper
 
 class ParticleScheduler:
     _cores = 50
@@ -31,13 +42,109 @@ class ParticleScheduler:
             result[i] = core_index
         return result
 
+    @print_timing
+    def schedule_in_sequence_baseline(self, particle_pos_array):
+        result = [None] * particle_pos_array.shape[0]
+        core_index = 0
+        for i in range(0, particle_pos_array.shape[0]):
+            result[i] = core_index
+            core_index = (core_index+1) % self._cores
+        return result
+
+    @print_timing
+    def schedule_with_grids_baseline(self, particle_pos_array):
+        result = [None] * particle_pos_array.shape[0]
+        total_cells = int(np.prod(np.array(self._gclayout)))
+        core_mapper = np.arange(total_cells).reshape(self._gclayout)
+        np_gclayout = np.array(self._gclayout)
+        for i in range(0, particle_pos_array.shape[0]):
+            cell_index = (particle_pos_array[i,:] // np_gclayout).astype(int)
+            core_index = core_mapper[cell_index[0],cell_index[1]]
+            result[i] = core_index
+        return result
+
+    @print_timing
+    def schedule_in_sequence_islice(self, particle_pos_array):
+        result = [None] * particle_pos_array.shape[0]
+        core_index = 0
+        for i in itertools.islice(itertools.count(), 0, particle_pos_array.shape[0]):
+            result[i] = core_index
+            core_index = (core_index+1) % self._cores
+        return result
+
+    @print_timing
+    def schedule_with_grids_islice(self, particle_pos_array):
+        result = [None] * particle_pos_array.shape[0]
+        total_cells = int(np.prod(np.array(self._gclayout)))
+        core_mapper = np.arange(total_cells).reshape(self._gclayout)
+        np_gclayout = np.array(self._gclayout)
+        for i in itertools.islice(itertools.count(), 0, particle_pos_array.shape[0]):
+            cell_index = (particle_pos_array[i,:] // np_gclayout).astype(int)
+            core_index = core_mapper[cell_index[0],cell_index[1]]
+            result[i] = core_index
+        return result
+
+    @print_timing
+    def schedule_in_sequence_npforelem(self, particle_pos_array):
+        result = [None] * particle_pos_array.shape[0]
+        core_index = 0
+        for i, particle in enumerate(particle_pos_array):
+            result[i] = core_index
+            core_index = (core_index+1) % self._cores
+        return result
+
+    @print_timing
+    def schedule_with_grids_npforelem(self, particle_pos_array):
+        result = [None] * particle_pos_array.shape[0]
+        total_cells = int(np.prod(np.array(self._gclayout)))
+        core_mapper = np.arange(total_cells).reshape(self._gclayout)
+        np_gclayout = np.array(self._gclayout)
+        for i, particle in enumerate(particle_pos_array):
+            cell_index = (particle // np_gclayout).astype(int)
+            core_index = core_mapper[cell_index[0],cell_index[1]]
+            result[i] = core_index
+        return result
+
+    @print_timing
+    def schedule_in_sequence_npndindex(self, particle_pos_array):
+        result = [None] * particle_pos_array.shape[0]
+        core_index = 0
+        for i in np.ndindex(particle_pos_array.shape[0]):
+            result[i[0]] = core_index
+            core_index = (core_index+1) % self._cores
+        return result
+
+    @print_timing
+    def schedule_with_grids_npndindex(self, particle_pos_array):
+        result = [None] * particle_pos_array.shape[0]
+        total_cells = int(np.prod(np.array(self._gclayout)))
+        core_mapper = np.arange(total_cells).reshape(self._gclayout)
+        np_gclayout = np.array(self._gclayout)
+        for i in np.ndindex(particle_pos_array.shape[0]):
+            cell_index = (particle_pos_array[i[0],:] // np_gclayout).astype(int)
+            core_index = core_mapper[cell_index[0],cell_index[1]]
+            result[i[0]] = core_index
+        return result
+
 
 if __name__ == "__main__":
     scheduler = ParticleScheduler()
-    particles_positions = np.random.rand(100,2)
-    particles_positions[:,0] *= 40.0
-    particles_positions[:,1] *= 30.0
-    core_distribution = scheduler.schedule_in_sequence(particles_positions)
-    print(core_distribution)
-    core_distribution = scheduler.schedule_with_grids(particles_positions)
-    print(core_distribution)
+    simple_particles_positions = np.random.rand(1000000,2)
+    simple_particles_positions[:,0] *= 40.0
+    simple_particles_positions[:,1] *= 30.0
+    print("In-Sequence scheduling - Baseline")
+    print_timing(scheduler.schedule_in_sequence_baseline(simple_particles_positions))
+    print("In-Sequence scheduling - Itertools.ISlice")
+    print_timing(scheduler.schedule_in_sequence_islice(simple_particles_positions))
+    print("In-Sequence scheduling - Numpy for-loop over array")
+    print_timing(scheduler.schedule_in_sequence_npforelem(simple_particles_positions))
+    print("In-Sequence scheduling - Numpy for-loop via np.ndindex")
+    print_timing(scheduler.schedule_in_sequence_npndindex(simple_particles_positions))
+    print("In-Cell scheduling - Baseline")
+    print_timing(scheduler.schedule_with_grids_baseline(simple_particles_positions))
+    print("In-Cell scheduling - Itertools.ISlice")
+    print_timing(scheduler.schedule_with_grids_islice(simple_particles_positions))
+    print("In-Cell scheduling - Numpy for-loop over array")
+    print_timing(scheduler.schedule_with_grids_npforelem(simple_particles_positions))
+    print("In-Cell scheduling - Numpy for-loop over via np.ndindex")
+    print_timing(scheduler.schedule_with_grids_npndindex(simple_particles_positions))
