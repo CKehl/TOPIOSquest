@@ -34,23 +34,10 @@ class ParticleScheduler:
         return self._cores
 
     def schedule_in_sequence(self, particle_pos_array):
-        result = [None] * particle_pos_array.shape[0]
-        core_index = 0
-        for i in range(0, particle_pos_array.shape[0]):
-            result[i] = core_index
-            core_index = (core_index+1) % self._cores
-        return result
+        return self.schedule_in_sequence_baseline(particle_pos_array)
 
     def schedule_with_grids(self, particle_pos_array):
-        result = [None] * particle_pos_array.shape[0]
-        total_cells = int(np.prod(np.array(self._gclayout)))
-        np_gclayout = np.array(self._gclayout)
-        core_mapper = np.arange(total_cells).reshape(np.flip(np_gclayout,0))
-        for i in range(0, particle_pos_array.shape[0]):
-            cell_index = np.flip((particle_pos_array[i, :] // self._gcdims).astype(int),0)
-            core_index = core_mapper[cell_index[0],cell_index[1]]
-            result[i] = core_index
-        return result
+        return self.schedule_with_grids_baseline(particle_pos_array)
 
     @print_timing
     def schedule_in_sequence_baseline(self, particle_pos_array):
@@ -67,9 +54,9 @@ class ParticleScheduler:
         total_cells = int(np.prod(np.array(self._gclayout)))
         np_gclayout = np.array(self._gclayout)
         core_mapper = np.arange(total_cells).reshape(np.flip(np_gclayout,0))
+        cell_indices = (particle_pos_array // self._gcdims).astype(int)[:,[1,0]]
         for i in range(0, particle_pos_array.shape[0]):
-            cell_index = np.flip((particle_pos_array[i, :] // self._gcdims).astype(int),0)
-            core_index = core_mapper[cell_index[0],cell_index[1]]
+            core_index = core_mapper[cell_indices[i,0],cell_indices[i,1]]
             result[i] = core_index
         return result
 
@@ -88,9 +75,9 @@ class ParticleScheduler:
         total_cells = int(np.prod(np.array(self._gclayout)))
         np_gclayout = np.array(self._gclayout)
         core_mapper = np.arange(total_cells).reshape(np.flip(np_gclayout,0))
+        cell_indices = (particle_pos_array // self._gcdims).astype(int)[:,[1,0]]
         for i in itertools.islice(itertools.count(), 0, particle_pos_array.shape[0]):
-            cell_index = np.flip((particle_pos_array[i, :] // self._gcdims).astype(int),0)
-            core_index = core_mapper[cell_index[0],cell_index[1]]
+            core_index = core_mapper[cell_indices[i,0],cell_indices[i,1]]
             result[i] = core_index
         return result
 
@@ -109,8 +96,8 @@ class ParticleScheduler:
         total_cells = int(np.prod(np.array(self._gclayout)))
         np_gclayout = np.array(self._gclayout)
         core_mapper = np.arange(total_cells).reshape(np.flip(np_gclayout,0))
-        for i, particle in enumerate(particle_pos_array):
-            cell_index = np.flip((particle // self._gcdims).astype(int), 0)
+        cell_indices = (particle_pos_array // self._gcdims).astype(int)[:,[1,0]]
+        for i, cell_index in enumerate(cell_indices):
             core_index = core_mapper[cell_index[0],cell_index[1]]
             result[i] = core_index
         return result
@@ -130,9 +117,9 @@ class ParticleScheduler:
         total_cells = int(np.prod(np.array(self._gclayout)))
         np_gclayout = np.array(self._gclayout)
         core_mapper = np.arange(total_cells).reshape(np.flip(np_gclayout,0))
-        for i in np.ndindex(particle_pos_array.shape[0]):
-            cell_index = np.flip((particle_pos_array[i[0],:] // self._gcdims).astype(int), 0)
-            core_index = core_mapper[cell_index[0],cell_index[1]]
+        cell_indices = (particle_pos_array // self._gcdims).astype(int)[:,[1,0]]
+        for i in np.ndindex(cell_indices.shape[0]):
+            core_index = core_mapper[cell_indices[i[0],0],cell_indices[i[0],1]]
             result[i[0]] = core_index
         return result
 
