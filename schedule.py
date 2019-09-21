@@ -33,10 +33,34 @@ class ParticleScheduler:
     def get_cores(self):
         return self._cores
 
+    def schedule_in_sequence(self, particle_pos_array, cores_k):
+        self.set_cores(cores_k)
+        self.schedule_in_sequence(particle_pos_array)
+
+    def schedule_with_grids(self, particle_pos_array, cores_k):
+        self.set_cores(cores_k)
+        self.schedule_with_grids(particle_pos_array)
+
     def schedule_in_sequence(self, particle_pos_array):
+        if np.min(particle_pos_array[:,0]<40.0).astype(bool) is False:
+            return []
+        if np.min(particle_pos_array[:,0]>0).astype(bool) is False:
+            return []
+        if np.min(particle_pos_array[:,1]<30.0).astype(bool) is False:
+            return []
+        if np.min(particle_pos_array[:,1]>0).astype(bool) is False:
+            return []
         return self.schedule_in_sequence_baseline(particle_pos_array)
 
     def schedule_with_grids(self, particle_pos_array):
+        if np.min(particle_pos_array[:,0]<40.0).astype(bool) is False:
+            return []
+        if np.min(particle_pos_array[:,0]>0).astype(bool) is False:
+            return []
+        if np.min(particle_pos_array[:,1]<30.0).astype(bool) is False:
+            return []
+        if np.min(particle_pos_array[:,1]>0).astype(bool) is False:
+            return []
         return self.schedule_with_grids_baseline(particle_pos_array)
 
     @print_timing
