@@ -9,5 +9,7 @@ The software includes:
 *  schedule_test.py - Unit test for the scheduler, checking the in-sequence based scheduling and grid-based scheduling
 
 Run the files via IDE / command line:
+
 python3 schedule.py
+
 python3 schedule_test.py
