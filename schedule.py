@@ -23,6 +23,12 @@ class ParticleScheduler:
         self._gcdims = [5, 5]
         self._gclayout = [int(self._gdims[0]/self._gcdims[0]), int(self._gdims[1]/self._gcdims[1])]
 
+    def set_cores(self, cores):
+        self._cores = cores
+
+    def get_cores(self):
+        return self._cores
+
     def schedule_in_sequence(self, particle_pos_array):
         result = [None] * particle_pos_array.shape[0]
         core_index = 0
@@ -35,9 +41,11 @@ class ParticleScheduler:
         result = [None] * particle_pos_array.shape[0]
         total_cells = int(np.prod(np.array(self._gclayout)))
         core_mapper = np.arange(total_cells).reshape(self._gclayout)
+        print(core_mapper)
         np_gclayout = np.array(self._gclayout)
         for i in range(0, particle_pos_array.shape[0]):
-            cell_index = (particle_pos_array[i,:] // np_gclayout).astype(int)
+            cell_index = (particle_pos_array[i, :] / np_gclayout).astype(int)
+            print("{0} => {1}".format(particle_pos_array[i, :],cell_index))
             core_index = core_mapper[cell_index[0],cell_index[1]]
             result[i] = core_index
         return result
@@ -133,21 +141,21 @@ if __name__ == "__main__":
     simple_particles_positions[:,0] *= 40.0
     simple_particles_positions[:,1] *= 30.0
     print("In-Sequence scheduling - Baseline")
-    print_timing(scheduler.schedule_in_sequence_baseline(simple_particles_positions))
+    scheduler.schedule_in_sequence_baseline(simple_particles_positions)
     print("In-Sequence scheduling - Itertools.ISlice")
-    print_timing(scheduler.schedule_in_sequence_islice(simple_particles_positions))
+    scheduler.schedule_in_sequence_islice(simple_particles_positions)
     print("In-Sequence scheduling - Numpy for-loop over array")
-    print_timing(scheduler.schedule_in_sequence_npforelem(simple_particles_positions))
+    scheduler.schedule_in_sequence_npforelem(simple_particles_positions)
     print("In-Sequence scheduling - Numpy for-loop via np.ndindex")
-    print_timing(scheduler.schedule_in_sequence_npndindex(simple_particles_positions))
+    scheduler.schedule_in_sequence_npndindex(simple_particles_positions)
     print("In-Cell scheduling - Baseline")
-    print_timing(scheduler.schedule_with_grids_baseline(simple_particles_positions))
+    scheduler.schedule_with_grids_baseline(simple_particles_positions)
     print("In-Cell scheduling - Itertools.ISlice")
-    print_timing(scheduler.schedule_with_grids_islice(simple_particles_positions))
+    scheduler.schedule_with_grids_islice(simple_particles_positions)
     print("In-Cell scheduling - Numpy for-loop over array")
-    print_timing(scheduler.schedule_with_grids_npforelem(simple_particles_positions))
+    scheduler.schedule_with_grids_npforelem(simple_particles_positions)
     print("In-Cell scheduling - Numpy for-loop over via np.ndindex")
-    print_timing(scheduler.schedule_with_grids_npndindex(simple_particles_positions))
+    scheduler.schedule_with_grids_npndindex(simple_particles_positions)
 
 
     print("Final run with 10^8 particles ...")
